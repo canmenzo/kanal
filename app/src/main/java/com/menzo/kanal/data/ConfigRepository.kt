@@ -18,9 +18,8 @@ object ConfigRepository {
         json.decodeFromString(AppConfig.serializer(), text)
     }
 
-    suspend fun loadM3u(sources: List<Channel>): List<Channel> = withContext(Dispatchers.IO) {
-        sources.flatMap { src ->
-            runCatching { M3uParser.parse(Net.get(src.url)) }.getOrDefault(emptyList())
-        }
+    // Channels for a single M3U source (each source is browsed on its own screen).
+    suspend fun loadM3uSource(source: Channel): List<Channel> = withContext(Dispatchers.IO) {
+        runCatching { M3uParser.parse(Net.get(source.url)) }.getOrDefault(emptyList())
     }
 }
