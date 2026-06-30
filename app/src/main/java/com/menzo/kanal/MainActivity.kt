@@ -34,8 +34,8 @@ class MainActivity : ComponentActivity() {
 private sealed interface Screen {
     data object Home : Screen
     data class Web(val channel: Channel) : Screen
-    data object M3uList : Screen
-    data class Play(val channel: Channel) : Screen
+    data class M3uList(val source: Channel) : Screen
+    data class Play(val channel: Channel, val source: Channel) : Screen
 }
 
 @Composable
@@ -52,7 +52,7 @@ private fun App() {
         is Screen.Home -> HomeScreen(
             config = cfg,
             onEmbed = { screen = Screen.Web(it) },
-            onM3u = { screen = Screen.M3uList }
+            onM3uSource = { screen = Screen.M3uList(it) }
         )
 
         is Screen.Web -> {
@@ -63,13 +63,13 @@ private fun App() {
         is Screen.M3uList -> {
             BackHandler { screen = Screen.Home }
             M3uListScreen(
-                sources = cfg.m3uSources,
-                onPlay = { screen = Screen.Play(it) }
+                source = s.source,
+                onPlay = { screen = Screen.Play(it, s.source) }
             )
         }
 
         is Screen.Play -> {
-            BackHandler { screen = Screen.M3uList }
+            BackHandler { screen = Screen.M3uList(s.source) }
             PlayerScreen(s.channel)
         }
     }

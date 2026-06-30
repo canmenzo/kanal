@@ -6,6 +6,7 @@
     { "id": 4, "name": "Channel 4 (Embed URL 4)", "type": "embed", "url": "https://example.com/embed/4" }
   ],
   "m3uSources": [
-    { "id": 1, "name": "My Playlist", "type": "m3u", "url": "https://canmenzo.com/playlist.m3u" }
+    { "id": 1, "name": "Free-TV", "type": "m3u", "url": "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8" },
+    { "id": 2, "name": "IPTV-org", "type": "m3u", "url": "https://iptv-org.github.io/iptv/index.m3u" }
   ]
 }
