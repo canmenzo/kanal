@@ -3,24 +3,20 @@ package com.menzo.kanal.data
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import java.io.File
 
-// Joins M3U channels to iptv-org's channel database (by tvg-id) to attach a
-// reliable country + categories. The DB is fetched once and cached on disk.
+// Joins M3U channels to a slim metadata map (id -> "CC|cat1,cat2") to attach a
+// reliable country + categories. The map is hosted on the site, fetched once,
+// and cached on disk. Much lighter than the full iptv-org database.
 object Metadata {
-    private const val DB_URL = "https://iptv-org.github.io/api/channels.json"
-    private const val CACHE_FILE = "iptv_channels.json"
+    private const val META_URL = "https://canmenzo.com/meta.json"
+    private const val CACHE_FILE = "meta.json"
     private const val MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000 // 1 week
 
-    @Serializable
-    data class Meta(
-        val id: String? = null,
-        val country: String? = null,
-        val categories: List<String> = emptyList()
-    )
+    data class Meta(val country: String, val categories: List<String>)
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -31,11 +27,16 @@ object Metadata {
         index?.let { return it }
         return withContext(Dispatchers.IO) {
             index?.let { return@withContext it }
-            val text = cachedOrFetch(context)
-            val list = runCatching {
-                json.decodeFromString(ListSerializer(Meta.serializer()), text)
-            }.getOrDefault(emptyList())
-            val map = list.filter { !it.id.isNullOrEmpty() }.associateBy { it.id!! }
+            val text = cachedOrFetch(context).let { if (it.startsWith('﻿')) it.substring(1) else it }
+            val raw = runCatching {
+                json.decodeFromString(MapSerializer(String.serializer(), String.serializer()), text)
+            }.getOrDefault(emptyMap())
+            val map = raw.mapValues { (_, v) ->
+                val pipe = v.indexOf('|')
+                val country = if (pipe >= 0) v.substring(0, pipe) else ""
+                val cats = if (pipe >= 0) v.substring(pipe + 1) else ""
+                Meta(country, cats.split(',').filter { it.isNotEmpty() })
+            }
             index = map
             map
         }
@@ -45,7 +46,7 @@ object Metadata {
         channels.map { ch ->
             val meta = index[ch.tvgId] ?: return@map ch
             ch.copy(
-                country = meta.country?.uppercase()?.takeIf { it.isNotEmpty() } ?: ch.country,
+                country = meta.country.takeIf { it.isNotEmpty() } ?: ch.country,
                 categories = meta.categories
             )
         }
@@ -56,11 +57,11 @@ object Metadata {
             return f.readText()
         }
         return try {
-            val fresh = Net.get(DB_URL)
+            val fresh = Net.get(META_URL)
             runCatching { f.writeText(fresh) }
             fresh
         } catch (e: Exception) {
-            if (f.exists()) f.readText() else "[]"
+            if (f.exists()) f.readText() else "{}"
         }
     }
 }

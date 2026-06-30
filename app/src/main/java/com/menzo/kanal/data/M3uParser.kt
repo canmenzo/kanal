@@ -22,14 +22,21 @@ object M3uParser {
                 line.isEmpty() || line.startsWith("#") -> Unit
                 else -> {
                     id++
+                    // tvg-id may carry a stream-quality suffix (e.g. "Name.ua@SD") that
+                    // must be stripped to match the iptv-org database id ("Name.ua").
+                    val cleanId = attrs["tvg-id"].orEmpty().substringBefore('@')
+                    // Country: prefer tvg-country, else the id's trailing ".cc" (iptv-org).
                     val country = (attrs["tvg-country"] ?: "")
-                        .split(';', ',').firstOrNull()?.trim()?.uppercase().orEmpty()
+                        .split(';', ',').firstOrNull()?.trim()?.uppercase()?.takeIf { it.length == 2 }
+                        ?: cleanId.substringAfterLast('.', "").uppercase()
+                            .takeIf { it.length == 2 && it.all { c -> c in 'A'..'Z' } }
+                        ?: ""
                     out += Channel(
                         id = id,
                         name = pendingName.ifEmpty { attrs["tvg-name"] ?: "Channel $id" },
                         type = "hls",
                         url = line,
-                        tvgId = attrs["tvg-id"].orEmpty(),
+                        tvgId = cleanId,
                         country = country,
                         logo = attrs["tvg-logo"].orEmpty()
                     )
