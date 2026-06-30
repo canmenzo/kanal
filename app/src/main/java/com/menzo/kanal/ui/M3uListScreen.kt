@@ -19,6 +19,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,7 +53,7 @@ import java.util.Locale
 // Countries pinned to the top of the country picker, in this order.
 private val PRIORITY = listOf("TR", "PT", "US")
 
-private enum class Picker { COUNTRY, CATEGORY }
+private enum class Picker { SEARCH, COUNTRY, CATEGORY }
 
 @Composable
 fun M3uListScreen(source: Channel, onPlay: (Channel) -> Unit) {
@@ -98,7 +101,7 @@ private fun Loaded(source: Channel, channels: List<Channel>, onPlay: (Channel) -
             // Left rail — always one LEFT-press away from the list.
             Column(Modifier.width(300.dp).padding(end = 28.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text(source.name, color = Color.White, style = MaterialTheme.typography.headlineSmall)
-                SearchField(query) { query = it }
+                RailButton(if (query.isBlank()) "Search" else "Search: $query") { picker = Picker.SEARCH }
                 RailButton("Country" + countLabel(selCountries.size), Modifier.focusRequester(railFocus)) { picker = Picker.COUNTRY }
                 RailButton("Category" + countLabel(selCats.size)) { picker = Picker.CATEGORY }
                 if (selCountries.isNotEmpty() || selCats.isNotEmpty() || query.isNotEmpty()) {
@@ -114,6 +117,7 @@ private fun Loaded(source: Channel, channels: List<Channel>, onPlay: (Channel) -
         }
 
         when (picker) {
+            Picker.SEARCH -> SearchOverlay(query, onChange = { query = it }, onClose = { picker = null })
             Picker.COUNTRY -> PickerOverlay(
                 title = "Filter by country",
                 options = countries,
@@ -225,23 +229,35 @@ private fun FilterChip(label: String, selected: Boolean, modifier: Modifier = Mo
 }
 
 @Composable
-private fun SearchField(value: String, onChange: (String) -> Unit) {
-    BasicTextField(
-        value = value,
-        onValueChange = onChange,
-        singleLine = true,
-        textStyle = TextStyle(color = Color.White, fontSize = 18.sp),
-        cursorBrush = SolidColor(Color.White),
-        modifier = Modifier.fillMaxWidth(),
-        decorationBox = { inner ->
-            Box(
-                Modifier.fillMaxWidth().background(Color(0x33FFFFFF), RoundedCornerShape(8.dp)).padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                if (value.isEmpty()) Text("Search…", color = Color(0x99FFFFFF), fontSize = 18.sp)
-                inner()
-            }
+private fun SearchOverlay(value: String, onChange: (String) -> Unit, onClose: () -> Unit) {
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    Box(Modifier.fillMaxSize().background(Color(0xF2000000)).padding(48.dp)) {
+        Column(Modifier.fillMaxWidth()) {
+            Text("Search", color = Color.White, style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(8.dp))
+            Text("Type to filter • Enter or Back to apply", color = Color(0x99FFFFFF), style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(24.dp))
+            BasicTextField(
+                value = value,
+                onValueChange = onChange,
+                singleLine = true,
+                textStyle = TextStyle(color = Color.White, fontSize = 24.sp),
+                cursorBrush = SolidColor(Color.White),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { onClose() }),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                decorationBox = { inner ->
+                    Box(
+                        Modifier.fillMaxWidth().background(Color(0x33FFFFFF), RoundedCornerShape(8.dp)).padding(horizontal = 20.dp, vertical = 18.dp)
+                    ) {
+                        if (value.isEmpty()) Text("Search channels…", color = Color(0x99FFFFFF), fontSize = 24.sp)
+                        inner()
+                    }
+                }
+            )
         }
-    )
+    }
 }
 
 @Composable
