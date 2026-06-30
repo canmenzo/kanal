@@ -18,8 +18,11 @@ object ConfigRepository {
         json.decodeFromString(AppConfig.serializer(), text)
     }
 
-    // Channels for a single M3U source (each source is browsed on its own screen).
-    suspend fun loadM3uSource(source: Channel): List<Channel> = withContext(Dispatchers.IO) {
-        runCatching { M3uParser.parse(Net.get(source.url)) }.getOrDefault(emptyList())
+    // Channels for a single M3U source (each source is browsed on its own screen),
+    // enriched with country + categories from the iptv-org database for filtering.
+    suspend fun loadM3uSource(context: Context, source: Channel): List<Channel> = withContext(Dispatchers.IO) {
+        val channels = runCatching { M3uParser.parse(Net.get(source.url)) }.getOrDefault(emptyList())
+        if (channels.isEmpty()) channels
+        else Metadata.enrich(channels, Metadata.index(context))
     }
 }
