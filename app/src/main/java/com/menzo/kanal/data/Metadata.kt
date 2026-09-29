@@ -1,6 +1,7 @@
 package com.menzo.kanal.data
 
 import android.content.Context
+import com.menzo.kanal.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.MapSerializer
@@ -9,10 +10,11 @@ import kotlinx.serialization.json.Json
 import java.io.File
 
 // Joins M3U channels to a slim metadata map (id -> "CC|cat1,cat2") to attach a
-// reliable country + categories. The map is hosted on the site, fetched once,
-// and cached on disk. Much lighter than the full iptv-org database.
+// reliable country + categories. The map is self-hosted (tools/make_meta.py builds
+// it), fetched once and cached on disk. Much lighter than the full iptv-org database.
+// Optional: with no kanal.metaUrl set, channels only get the country from the playlist.
 object Metadata {
-    private const val META_URL = "https://canmenzo.com/meta.json"
+    private val META_URL: String = BuildConfig.META_URL
     private const val CACHE_FILE = "meta.json"
     private const val MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000 // 1 week
 
@@ -56,6 +58,7 @@ object Metadata {
         if (f.exists() && System.currentTimeMillis() - f.lastModified() < MAX_AGE_MS) {
             return f.readText()
         }
+        if (META_URL.isEmpty()) return if (f.exists()) f.readText() else "{}"
         return try {
             val fresh = Net.get(META_URL)
             runCatching { f.writeText(fresh) }
