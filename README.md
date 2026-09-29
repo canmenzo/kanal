@@ -54,7 +54,7 @@ Also update the offline fallback at `app/src/main/assets/channels.json` if you w
 }
 ```
 
-The metadata map is a flat JSON object from `tvg-id` to `"CC|category1,category2"`, for example `{ "TRT1.tr": "TR|general" }`. If it can't be fetched, channels still get a country from the playlist, just no categories.
+The metadata map is a flat JSON object from `tvg-id` to `"CC|category1,category2"`, for example `{ "TRT1.tr": "TR|general" }`. Generate it from the iptv-org database with `python3 tools/make_meta.py` and host it next to `channels.json`. If it can't be fetched, channels still get a country from the playlist, just no categories.
 
 </details>
 
