@@ -9,7 +9,7 @@ remote-hosted JSON config. No Play Store, sideload only.
   channel inside, each plays via ExoPlayer.
 
 ## Config
-App fetches `channels.json` (hosted at e.g. canmenzo.com) on launch. Editing the JSON
+App fetches `channels.json` (self-hosted, e.g. a GitHub raw URL or any static host) on launch. Editing the JSON
 changes channels without rebuilding the APK. See `channels.json` for the shape.
 
 ## Home screen
