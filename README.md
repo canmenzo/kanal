@@ -1,6 +1,6 @@
 # 📺 kanal
 
-![platform](https://img.shields.io/badge/platform-Android%20TV-3DDC84?logo=android&logoColor=white) ![kotlin](https://img.shields.io/badge/kotlin-2.0-7F52FF?logo=kotlin&logoColor=white) ![min sdk](https://img.shields.io/badge/min%20SDK-21-lightgrey) [![license](https://img.shields.io/github/license/canmenzo/kanal)](LICENSE)
+[![build](https://github.com/canmenzo/kanal/actions/workflows/build.yml/badge.svg)](https://github.com/canmenzo/kanal/actions/workflows/build.yml) ![platform](https://img.shields.io/badge/platform-Android%20TV-3DDC84?logo=android&logoColor=white) ![kotlin](https://img.shields.io/badge/kotlin-2.0-7F52FF?logo=kotlin&logoColor=white) ![min sdk](https://img.shields.io/badge/min%20SDK-21-lightgrey) [![license](https://img.shields.io/github/license/canmenzo/kanal)](LICENSE)
 
 A small sideloaded Android TV player (built and tested on the Onn 4K, Google TV / Android 12). It reads a channel list from a JSON file you host, and plays embed pages in a WebView and M3U playlist streams in Media3/ExoPlayer. Not on the Play Store.
 
@@ -14,10 +14,10 @@ A small sideloaded Android TV player (built and tested on the Onn 4K, Google TV 
 
 ### 🚀 Quick start
 1. Host your own copy of [`channels.json`](channels.json) somewhere the TV can reach (GitHub raw URL, a Gist, any static host).
-2. Point the app at it (see Configuration), then build and install:
+2. Build with your URL (see Configuration) and install:
 
 ```sh
-./gradlew assembleDebug
+./gradlew assembleDebug -Pkanal.configUrl=https://example.com/channels.json
 adb connect <tv-ip>:5555
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
@@ -25,18 +25,21 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 You need JDK 17 and the Android SDK (opening the project once in Android Studio sets both up). Enable developer options and network debugging on the TV first.
 
 ### ⚙️ Configuration
-The URLs are constants in the Kotlin source, so changing them means a rebuild. Editing the hosted JSON itself does not.
+The URLs are baked in at build time from two Gradle properties, so changing them means a rebuild. Editing the hosted JSON itself does not.
 
-| What | File | Constant |
+| Property | What | Default |
 |---|---|---|
-| Channel list | `app/src/main/java/com/menzo/kanal/data/ConfigRepository.kt` | `CONFIG_URL` |
-| Country/category map (optional) | `app/src/main/java/com/menzo/kanal/data/Metadata.kt` | `META_URL` |
+| `kanal.configUrl` | Channel list | `https://example.com/channels.json` |
+| `kanal.metaUrl` | Country/category map (optional) | none: channels only get the country from the playlist |
 
-```kotlin
-const val CONFIG_URL = "https://example.com/channels.json"
+Pass them with `-P` as above, or set them once in `~/.gradle/gradle.properties`:
+
+```properties
+kanal.configUrl=https://example.com/channels.json
+kanal.metaUrl=https://example.com/meta.json
 ```
 
-Also update the offline fallback at `app/src/main/assets/channels.json` if you want it to match your list.
+The app falls back to the bundled `app/src/main/assets/channels.json` when the hosted list can't be reached, so update it too if you want it to match.
 
 <details>
 <summary>File formats</summary>

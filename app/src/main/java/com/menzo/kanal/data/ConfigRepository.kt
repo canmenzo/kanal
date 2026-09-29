@@ -1,13 +1,15 @@
 package com.menzo.kanal.data
 
 import android.content.Context
+import com.menzo.kanal.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 object ConfigRepository {
-    // Host your channel list here; edit it to change channels without rebuilding.
-    const val CONFIG_URL = "https://canmenzo.com/channels.json"
+    // Set at build time from the kanal.configUrl Gradle property (see app/build.gradle.kts).
+    // Editing the hosted file changes channels without rebuilding.
+    val CONFIG_URL: String = BuildConfig.CONFIG_URL
 
     private val json = Json { ignoreUnknownKeys = true }
 

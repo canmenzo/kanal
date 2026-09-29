@@ -15,6 +15,14 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        // Where the app fetches its channel list and the optional country/category map.
+        // Set kanal.configUrl / kanal.metaUrl in ~/.gradle/gradle.properties or pass -P.
+        val configUrl = providers.gradleProperty("kanal.configUrl")
+            .getOrElse("https://example.com/channels.json")
+        val metaUrl = providers.gradleProperty("kanal.metaUrl").getOrElse("")
+        buildConfigField("String", "CONFIG_URL", "\"$configUrl\"")
+        buildConfigField("String", "META_URL", "\"$metaUrl\"")
     }
 
     buildTypes {
@@ -32,7 +40,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 dependencies {
