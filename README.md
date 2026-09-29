@@ -1,6 +1,6 @@
 # 📺 kanal
 
-![platform](https://img.shields.io/badge/platform-Android%20TV-3DDC84?logo=android&logoColor=white) ![kotlin](https://img.shields.io/badge/kotlin-2.0-7F52FF?logo=kotlin&logoColor=white) ![min sdk](https://img.shields.io/badge/min%20SDK-21-lightgrey)
+![platform](https://img.shields.io/badge/platform-Android%20TV-3DDC84?logo=android&logoColor=white) ![kotlin](https://img.shields.io/badge/kotlin-2.0-7F52FF?logo=kotlin&logoColor=white) ![min sdk](https://img.shields.io/badge/min%20SDK-21-lightgrey) [![license](https://img.shields.io/github/license/canmenzo/kanal)](LICENSE)
 
 A small sideloaded Android TV player (built and tested on the Onn 4K, Google TV / Android 12). It reads a channel list from a JSON file you host, and plays embed pages in a WebView and M3U playlist streams in Media3/ExoPlayer. Not on the Play Store.
 
@@ -64,4 +64,4 @@ See [SPEC.md](SPEC.md) for the original design notes.
 Kotlin, Jetpack Compose for TV, Media3/ExoPlayer, Android WebView, Gradle (KTS).
 
 ### 📄 License
-No license yet.
+[MIT](LICENSE)
