@@ -29,8 +29,8 @@ The URLs are baked in at build time from two Gradle properties, so changing them
 
 | Property | What | Default |
 |---|---|---|
-| `kanal.configUrl` | Channel list | `https://example.com/channels.json` |
-| `kanal.metaUrl` | Country/category map (optional) | none: channels only get the country from the playlist |
+| `kanal.configUrl` | Channel list | `https://menzo.dev/channels.json` |
+| `kanal.metaUrl` | Country/category map (optional) | `https://menzo.dev/meta.json` |
 
 Pass them with `-P` as above, or set them once in `~/.gradle/gradle.properties`:
 

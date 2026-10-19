@@ -17,10 +17,10 @@ android {
         versionName = "1.0"
 
         // Where the app fetches its channel list and the optional country/category map.
-        // Set kanal.configUrl / kanal.metaUrl in ~/.gradle/gradle.properties or pass -P.
+        // Defaults to the menzo.dev lists; override with kanal.configUrl / kanal.metaUrl via -P or ~/.gradle/gradle.properties.
         val configUrl = providers.gradleProperty("kanal.configUrl")
-            .getOrElse("https://example.com/channels.json")
-        val metaUrl = providers.gradleProperty("kanal.metaUrl").getOrElse("")
+            .getOrElse("https://menzo.dev/channels.json")
+        val metaUrl = providers.gradleProperty("kanal.metaUrl").getOrElse("https://menzo.dev/meta.json")
         buildConfigField("String", "CONFIG_URL", "\"$configUrl\"")
         buildConfigField("String", "META_URL", "\"$metaUrl\"")
     }
