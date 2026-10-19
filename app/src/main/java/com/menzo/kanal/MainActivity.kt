@@ -35,7 +35,7 @@ private sealed interface Screen {
     data object Home : Screen
     data class Web(val channel: Channel) : Screen
     data class M3uList(val source: Channel) : Screen
-    data class Play(val channel: Channel, val source: Channel) : Screen
+    data class Play(val channel: Channel, val source: Channel?) : Screen
 }
 
 @Composable
@@ -51,7 +51,10 @@ private fun App() {
     when (val s = screen) {
         is Screen.Home -> HomeScreen(
             config = cfg,
-            onEmbed = { screen = Screen.Web(it) },
+            onEmbed = { ch ->
+                // embed → WebView; direct hls/mp4 → ExoPlayer (no playlist source, back to Home)
+                screen = if (ch.type == "embed") Screen.Web(ch) else Screen.Play(ch, null)
+            },
             onM3uSource = { screen = Screen.M3uList(it) }
         )
 
@@ -69,7 +72,7 @@ private fun App() {
         }
 
         is Screen.Play -> {
-            BackHandler { screen = Screen.M3uList(s.source) }
+            BackHandler { screen = s.source?.let { Screen.M3uList(it) } ?: Screen.Home }
             PlayerScreen(s.channel)
         }
     }

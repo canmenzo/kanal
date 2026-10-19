@@ -19,11 +19,14 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.menzo.kanal.data.Channel
+import com.menzo.kanal.data.refererUrl
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -33,7 +36,18 @@ fun PlayerScreen(channel: Channel) {
     var buffering by remember { mutableStateOf(true) }
 
     val player = remember {
-        ExoPlayer.Builder(context).build().apply {
+        // Browser-like UA + optional Referer: many streams reject ExoPlayer's default UA
+        // or gate on Referer, surfacing as "stream unavailable".
+        val http = DefaultHttpDataSource.Factory()
+            .setUserAgent("Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            .setAllowCrossProtocolRedirects(true)
+        val referer = channel.refererUrl
+        if (referer.isNotBlank()) {
+            http.setDefaultRequestProperties(mapOf("Referer" to referer))
+        }
+        ExoPlayer.Builder(context)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(http))
+            .build().apply {
             setMediaItem(MediaItem.fromUri(channel.url))
             addListener(object : Player.Listener {
                 override fun onPlaybackStateChanged(state: Int) {
@@ -41,7 +55,8 @@ fun PlayerScreen(channel: Channel) {
                 }
 
                 override fun onPlayerError(e: PlaybackException) {
-                    error = e.errorCodeName
+                    // Show the real cause so referer/UA/404/403 issues are diagnosable on-screen.
+                    error = "${e.errorCodeName}\n${e.cause?.message ?: ""}"
                 }
             })
             prepare()
