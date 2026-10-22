@@ -57,11 +57,27 @@ fun WebPlayerScreen(channel: Channel) {
                         !isWebUrl(request.url.toString())
                 }
                 webChromeClient = object : WebChromeClient() {
-                    // Load window.open() popups in this same WebView instead of dropping them.
+                    // A WebView cannot host its own popup, so catch the popup's first URL in a
+                    // throwaway WebView and load it here if it passes the same scheme check.
                     override fun onCreateWindow(
                         view: WebView, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message
                     ): Boolean {
-                        (resultMsg.obj as WebView.WebViewTransport).webView = view
+                        val probe = WebView(view.context)
+                        probe.webViewClient = object : WebViewClient() {
+                            private fun take(v: WebView, url: String?): Boolean {
+                                if (url != null && isWebUrl(url)) view.loadUrl(url)
+                                v.destroy()
+                                return true
+                            }
+
+                            @Deprecated("Called below API 24")
+                            override fun shouldOverrideUrlLoading(v: WebView, url: String?): Boolean = take(v, url)
+
+                            @TargetApi(Build.VERSION_CODES.N)
+                            override fun shouldOverrideUrlLoading(v: WebView, request: WebResourceRequest): Boolean =
+                                take(v, request.url.toString())
+                        }
+                        (resultMsg.obj as WebView.WebViewTransport).webView = probe
                         resultMsg.sendToTarget()
                         return true
                     }
