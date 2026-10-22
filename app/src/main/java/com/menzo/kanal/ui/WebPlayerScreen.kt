@@ -1,8 +1,12 @@
 package com.menzo.kanal.ui
 
+import android.annotation.TargetApi
+import android.net.Uri
+import android.os.Build
 import android.os.Message
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -12,6 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.menzo.kanal.data.Channel
 import com.menzo.kanal.data.refererUrl
+
+// Embeds come from a remote list; never let them hand off to intent:, market:, file:, etc.
+private fun isWebUrl(url: String?): Boolean =
+    Uri.parse(url ?: "").scheme?.lowercase() in setOf("http", "https", "about")
+
+private fun htmlEscape(s: String): String =
+    s.replace("&", "&amp;").replace("\"", "&quot;").replace("'", "&#39;")
+        .replace("<", "&lt;").replace(">", "&gt;")
 
 @Composable
 fun WebPlayerScreen(channel: Channel) {
@@ -28,12 +40,22 @@ fun WebPlayerScreen(channel: Channel) {
                 settings.mediaPlaybackRequiresUserGesture = false
                 settings.useWideViewPort = true
                 settings.loadWithOverviewMode = true
+                settings.allowFileAccess = false
+                settings.allowContentAccess = false
                 // Embed pages routinely pull http subresources; don't let mixed-content block them.
                 settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 // Some providers open the real stream via window.open() from the iframe.
                 settings.setSupportMultipleWindows(true)
                 settings.javaScriptCanOpenWindowsAutomatically = true
-                webViewClient = WebViewClient()
+                webViewClient = object : WebViewClient() {
+                    @Deprecated("Called below API 24")
+                    override fun shouldOverrideUrlLoading(view: WebView, url: String?): Boolean =
+                        !isWebUrl(url)
+
+                    @TargetApi(Build.VERSION_CODES.N)
+                    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
+                        !isWebUrl(request.url.toString())
+                }
                 webChromeClient = object : WebChromeClient() {
                     // Load window.open() popups in this same WebView instead of dropping them.
                     override fun onCreateWindow(
@@ -45,7 +67,10 @@ fun WebPlayerScreen(channel: Channel) {
                     }
                 }
                 val referer = channel.refererUrl
-                if (referer.isBlank()) {
+                val scheme = Uri.parse(channel.url).scheme?.lowercase()
+                if (scheme != "http" && scheme != "https") {
+                    loadUrl("about:blank")
+                } else if (referer.isBlank()) {
                     loadUrl(channel.url)
                 } else {
                     // Wrap the embed in an iframe and load it under `referer` as the page
@@ -59,7 +84,7 @@ fun WebPlayerScreen(channel: Channel) {
                         <style>html,body{margin:0;height:100%;background:#000;overflow:hidden}
                         iframe{border:0;width:100%;height:100%}</style>
                         </head><body>
-                        <iframe src="${channel.url}" referrerpolicy="unsafe-url" allow="encrypted-media; autoplay; fullscreen" allowfullscreen></iframe>
+                        <iframe src="${htmlEscape(channel.url)}" referrerpolicy="unsafe-url" allow="encrypted-media; autoplay; fullscreen" allowfullscreen></iframe>
                         </body></html>
                     """.trimIndent()
                     loadDataWithBaseURL(referer, html, "text/html", "UTF-8", null)
